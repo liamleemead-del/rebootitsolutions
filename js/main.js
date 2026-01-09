@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<span class="spinner mr-2"></span>Sending...';
 
                 const formData = new FormData(this);
-                const response = await fetch('/', {
+                const response = await fetch(window.location.pathname, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams(formData).toString()
