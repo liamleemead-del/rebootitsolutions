@@ -81,40 +81,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalText = submitBtn.innerHTML;
 
             // Show loading state
-            submitBtn.innerHTML = '<span class="spinner mr-2"></span>Verifying...';
+            submitBtn.innerHTML = '<span class="spinner mr-2"></span>Sending...';
             submitBtn.disabled = true;
 
-            // Get Turnstile token
-            const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
-            const turnstileToken = turnstileResponse ? turnstileResponse.value : null;
-
             try {
-                // Step 1: Verify Turnstile token server-side
-                if (turnstileToken) {
-                    const verifyResponse = await fetch('/.netlify/functions/verify-turnstile', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: turnstileToken })
-                    });
-
-                    const verifyResult = await verifyResponse.json();
-
-                    if (!verifyResult.success) {
-                        throw new Error(verifyResult.error || 'Verification failed. Please try again.');
-                    }
-                }
-
-                // Step 2: Submit form to Netlify Forms
-                submitBtn.innerHTML = '<span class="spinner mr-2"></span>Sending...';
-
+                // Submit form to our Netlify Function (handles Turnstile verification too)
                 const formData = new FormData(this);
-                const response = await fetch(window.location.pathname, {
+                const response = await fetch('/.netlify/functions/contact-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams(formData).toString()
                 });
 
-                if (response.ok) {
+                const result = await response.json();
+
+                if (result.success) {
                     // Show success message
                     showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
                     this.reset();
@@ -123,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         turnstile.reset();
                     }
                 } else {
-                    throw new Error('Form submission failed');
+                    throw new Error(result.error || 'Form submission failed');
                 }
             } catch (error) {
                 showNotification(error.message || 'Sorry, something went wrong. Please try calling instead.', 'error');
