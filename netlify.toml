@@ -3,6 +3,7 @@
 [build]
   # No build command needed for static HTML
   publish = "."
+  functions = "netlify/functions"
 
 # Headers for security and performance
 [[headers]]

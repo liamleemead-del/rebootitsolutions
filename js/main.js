@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Form validation and submission
+    // Form validation and submission with Turnstile verification
     const contactForm = document.getElementById('contact-form');
 
     if (contactForm) {
@@ -81,15 +81,33 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalText = submitBtn.innerHTML;
 
             // Show loading state
-            submitBtn.innerHTML = '<span class="spinner mr-2"></span>Sending...';
+            submitBtn.innerHTML = '<span class="spinner mr-2"></span>Verifying...';
             submitBtn.disabled = true;
 
-            // Get form data
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
+            // Get Turnstile token
+            const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+            const turnstileToken = turnstileResponse ? turnstileResponse.value : null;
 
             try {
-                // Netlify Forms handles this automatically
+                // Step 1: Verify Turnstile token server-side
+                if (turnstileToken) {
+                    const verifyResponse = await fetch('/.netlify/functions/verify-turnstile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: turnstileToken })
+                    });
+
+                    const verifyResult = await verifyResponse.json();
+
+                    if (!verifyResult.success) {
+                        throw new Error(verifyResult.error || 'Verification failed. Please try again.');
+                    }
+                }
+
+                // Step 2: Submit form to Netlify Forms
+                submitBtn.innerHTML = '<span class="spinner mr-2"></span>Sending...';
+
+                const formData = new FormData(this);
                 const response = await fetch('/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -100,11 +118,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show success message
                     showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
                     this.reset();
+                    // Reset Turnstile widget
+                    if (typeof turnstile !== 'undefined') {
+                        turnstile.reset();
+                    }
                 } else {
                     throw new Error('Form submission failed');
                 }
             } catch (error) {
-                showNotification('Sorry, something went wrong. Please try calling instead.', 'error');
+                showNotification(error.message || 'Sorry, something went wrong. Please try calling instead.', 'error');
+                // Reset Turnstile widget on error
+                if (typeof turnstile !== 'undefined') {
+                    turnstile.reset();
+                }
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
