@@ -1,0 +1,19 @@
+{
+    "name": "Reboot IT Solutions",
+    "short_name": "Reboot IT",
+    "icons": [
+        {
+            "src": "images/android-chrome-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "images/android-chrome-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#F7941D",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}
